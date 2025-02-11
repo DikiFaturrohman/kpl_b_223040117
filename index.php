@@ -28,186 +28,82 @@ $halaman1 = query("SELECT * FROM halaman");
 </head>
 
 <body>
-    <!-- navbar -->
-    <?php include('nav.php') ?>
-    <!-- end navbar -->
-
-    <!-- home -->
-
-    <!-- Internasional News -->
-
-    <section class="Internasional section-margin" id="internasional">
-        <div class="container text-center">
-            <div class="row">
-                <div class="col">
-                    <h1 class="heading text-center">Internasional News</h1>
-                </div>
+    <!-- Navbar -->
+    <?php include('nav.php'); ?>
+    
+    <!-- Home -->
+    <div class="container">
+        <div class="row">
+        </div>
+        
+        <!-- Jumbotron -->
+        <div class="row mt-5">
+            <div class="jumbotron mt-5">
+                <h1 class="display-3">Selamat Datang!</h1>
+                <hr class="my-5">
+                <h3>
+                    Sebuah tempat berbagi inspirasi, wawasan, dan cerita menarik. Blog ini hadir untuk menyajikan berbagai artikel informatif dan menghibur, mulai dari teknologi, gaya hidup, hingga pengalaman sehari-hari yang penuh makna.
+                    <br><br>
+                    Kami percaya bahwa tulisan memiliki kekuatan untuk menghubungkan orang, membuka pikiran, dan memberikan perspektif baru. Oleh karena itu, kami berkomitmen menghadirkan konten berkualitas yang tidak hanya menghibur, tetapi juga memberikan nilai tambah bagi pembaca.
+                </h3>
+                <a class="btn btn-warning btn-lg mt-5" href="#" role="button">Mulai Menulis</a>
+                <hr class="my-5">
             </div>
-            <div class="row mt-4">
-                <div class="col populer d-lg-flex justify-content-lg-between">
-                    <h3 class="heading text-center">Internasional News</h3>
-                </div>
-            </div>
-            <div class="row mt-4 internasional-populer">
-                <div class="col">
-                    <!-- Card -->
-                    <div class="container">
-                        <div class="row">
-                            <?php $count = 0; ?>
-                            <?php foreach ($halaman as $h) : ?>
-                            <?php if ($h['id'] != 9 && $count <= 3) : ?>
-                            <div class="card mx-3 d-inline-block" style="width: 18rem;">
-                                <img src="img/<?= $h['gambar']; ?>" class="card-img-top" alt="" />
-                                <div class="card-body">
-                                    <h5 class="card-title"><?= $h['judul']; ?></h5>
-                                    <p class="card-text"><?= $h['kutipan']; ?></p>
-                                    <a href="ditel.php?id=<?= $h["id"] ?>" class="btn btn-primary">Selengkapnya</a>
-                                </div>
+        </div>
+        
+        <!-- Blog Section -->
+        <div class="col populer d-lg-flex justify-content-lg-between">
+            <h2 class="text-center mt-5" id="blog">Blog</h2>
+            <hr class="my-5">
+        </div>
+        
+        <!-- Blog Cards -->
+        <div class="row mt-4 internasional-populer">
+            <div class="col">
+                <div class="container">
+                    <div class="row">
+                        <?php $count = 0; ?>
+                        <?php foreach ($halaman as $h) : ?>
+                        <?php if ($h['id'] != 9 && $count <= 3) : ?>
+                        <div class="card mx-3 d-inline-block" style="width: 18rem;">
+                            <img src="img/<?= $h['gambar']; ?>" class="card-img-top" alt="" />
+                            <div class="card-body">
+                                <h5 class="card-title"><?= $h['judul']; ?></h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+                                <p class="card-text"><?= $h['kutipan']; ?></p>
+                                <a href="ditel.php?id=<?= $h["id"] ?>" class="btn btn-warning">Selengkapnya</a>
                             </div>
-                            <?php $count++; ?>
-                            <?php endif; ?>
-                            <?php endforeach; ?>
                         </div>
+                        <?php $count++; ?>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
-                    <!-- <div class="card d-inline-block" style="width: 18rem">
-            <img src="img/LulusanTerbaik.jpg" class="card-img-top" alt="..." />
-            <div class="card-body">
-              <h5 class="card-title"></h5>
-              <p class="card-text">
-                Jadi Wisudawan Doktor Termuda dan Terbaik Unair, Maria Lulus
-                di Usia 24 Tahun.
-              </p>
-              <a href="#" class="btn btn-primary">Selengkapnya</a>
-            </div>
-          </div>
-          <div class="card d-inline-block" style="width: 18rem">
-            <img src="img/STEI.jpg" class="card-img-top" alt="..." />
-            <div class="card-body">
-              <h5 class="card-title"></h5>
-              <p class="card-text">
-                STEI ITB Borong 3 Juara Ajang Huawei ICT Competition Tingkat
-                Dunia
-              </p>
-              <a href="#" class="btn btn-primary">Selengkapnya</a>
-            </div>
-          </div>
-          <div class="card d-inline-block" style="width: 18rem">
-            <img src="img/pancasila.jpeg" class="card-img-top" alt="..." />
-            <div class="card-body">
-              <h5 class="card-title"></h5>
-              <p class="card-text">
-                Alumni Universitas Pancasila Gelar Turnamen Golf untuk Anak
-                Yatim.
-              </p>
-              <a href="#" class="btn btn-primary">Selengkapnya</a>
-            </div>
-          </div> -->
-                    <!-- End Card -->
-
-                    <!-- Nasional news -->
-                    <section class="service section-margin" id="nasional">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col text-center">
-                                    <h1 class="heading">Nasional News</h1>
-                                    <p class="subheading"></p>
-                                </div>
-                            </div>
-                            <div class="row mt-5">
-                                <?php $count = 0; ?>
-                                <?php foreach ($halaman1 as $h) : ?>
-                                <?php if ($h['id'] >= 14 && $count <= 2) : ?>
-                                <div class="col-lg-4">
-                                    <div
-                                        class="card-service rounded-3 d-flex justify-content-between align-items-center p-1">
-                                        <div class="img service">
-                                            <img src="img/<?= $h['gambar']; ?>" class="img-fluid" alt="" />
-                                            <p class="mt-4">
-                                                <?= $h['kutipan']; ?>
-                                            </p>
-                                            <a href="ditel.php?id=<?= $h["id"] ?>"
-                                                class="btn btn-primary">Selengkapnya</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php $count++; ?>
-                                <?php endif; ?>
-                                <?php endforeach; ?>
-                            </div>
-
-                        </div>
-                    </section>
-
-                    <!-- Populer News -->
-
-                    <section class="Tranding" id="populer">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-text-center py-5">
-                                    <h1 class="heading">Populer News</h1>
-                                    <p class="subheading"></p>
-                                </div>
-
-                                <?php $count = 0; ?>
-                                <?php foreach ($halaman1 as $h) : ?>
-                                <?php if ($h['id'] >= 17 && $count <= 4) : ?>
-                                <div class="col-lg-4">
-                                    <div
-                                        class="card-service rounded-3 d-flex justify-content-between align-items-center p-1">
-                                        <div class="img service">
-                                            <img src="img/<?= $h['gambar']; ?>" class="img-fluid" alt="" />
-                                            <p class="mt-4">
-                                                <?= $h['kutipan']; ?>
-                                            </p>
-                                            <a href="ditel.php?id=<?= $h["id"] ?>"
-                                                class="btn btn-primary">Selengkapnya</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php $count++; ?>
-                                <?php endif; ?>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </section>
                 </div>
             </div>
         </div>
-    </section>
-
-    <!-- footer -->
-    <section id="footerPakeS">
+    </div>
+    
+    <!-- Footer -->
+    <footer id="footerPakeS" style="background-color: rgb(0,39,60);" class="text-light py-3 mt-5">
         <div class="container">
-            <div class="row my-3">
-                <div class="col-6">
-                    <h3>contact person</h3>
-                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore beatae harum amet doloremque
-                        ducimus architecto voluptatibus, numquam quas fuga doloribus est, necessitatibus, vitae omnis id
-                        nam sequi assumenda libero error.</p>
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">&copy; 2025 <span class="text-warning">CAMPUS BLOG</span>. All Rights Reserved.</p>
                 </div>
-                <div class="footerContainer col-6 d-flex flex-row-reverse">
-
-                    <div class="socialIcon">
-                        <a href=""><i style="font-size: 50px !important;" class="fa-brands fa-instagram"><span
-                                    style="display:none;">facebook</span></i></a>
-                        <button class="btn btn-danger" onclick="window.print()">download</button>
-                    </div>
-
-
-
+                <div class="col-md-6 d-flex justify-content-md-end justify-content-center">
+                    <a href="#" class="text-light mx-2"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="text-light mx-2"><i class="fab fa-instagram"></i></a>
                 </div>
             </div>
         </div>
-
-    </section>
-
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://kit.fontawesome.com/YOUR_KIT_CODE.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-qKXV1j0HvMUeCBQ+QVp7JcfGl760yU08IQ+GpUo5hlbpg51QRiuqHAJz8+BrxE/N" crossorigin="anonymous">
     </script>
-
-    <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-
     <script src="/tubes/js/script.js"></script>
 </body>
 
