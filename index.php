@@ -55,7 +55,7 @@ $halaman1 = query("SELECT * FROM halaman");
             </div>
         </div>
 
-        <!-- Blog Section -->
+        <!-- Blog -->
         <div class="col populer d-lg-flex justify-content-lg-between">
             <h2 class="text-center mt-5" id="blog">Blog</h2>
             <hr class="my-5">
@@ -74,7 +74,7 @@ $halaman1 = query("SELECT * FROM halaman");
                                 <img src="img/<?= $h['gambar']; ?>" class="card-img-top" alt="" />
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title"><?= $h['judul']; ?></h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+                                    <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6> 
                                     <p class="card-text"><?= $h['kutipan']; ?></p>
                                     <a href="ditel.php?id=<?= $h["id"] ?>"
                                         class="btn btn-warning mt-auto">Selengkapnya</a>
