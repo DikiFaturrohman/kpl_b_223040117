@@ -8,7 +8,7 @@ if (!isset($_SESSION['username'])) {
 }
 
 $username = $_SESSION['username'];
-$query = "SELECT * FROM halaman WHERE penulis = ?";
+$query = "SELECT * FROM halaman WHERE penulis = ? ORDER BY tgl_isi DESC";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("s", $username);
 $stmt->execute();
@@ -75,12 +75,14 @@ $result = $stmt->get_result();
             <tr>
                 <th>Judul</th>
                 <th>Kutipan</th>
+                <th>Tanggal</th>
                 <th>Aksi</th>
             </tr>
             <?php while ($row = $result->fetch_assoc()): ?>
             <tr>
                 <td><?php echo htmlspecialchars($row['judul']); ?></td>
                 <td><?php echo htmlspecialchars($row['kutipan']); ?></td>
+                <td><?php echo date("d M Y H:i", strtotime($row['tgl_isi'])); ?></td>
                 <td>
                     <a href="edit.php?id=<?php echo $row['id']; ?>">Edit</a> |
                     <a href="delete.php?id=<?php echo $row['id']; ?>" onclick="return confirm('Yakin ingin menghapus blog ini?');">Hapus</a>

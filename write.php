@@ -15,11 +15,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $kategori = $_POST['kategori'];
     $tgl_isi = date('Y-m-d H:i:s');
 
-    // Upload gambar
+    // Validasi unggahan gambar
     $gambar = '';
     if (!empty($_FILES['gambar']['name'])) {
-        $gambar = 'uploads/' . basename($_FILES['gambar']['name']);
-        move_uploaded_file($_FILES['gambar']['tmp_name'], $gambar);
+        $ekstensi_diperbolehkan = ['jpg', 'jpeg', 'png'];
+        $namafile = $_FILES['gambar']['name'];
+        $ukuranfile = $_FILES['gambar']['size'];
+        $error = $_FILES['gambar']['error'];
+        $tmpName = $_FILES['gambar']['tmp_name'];
+
+        $ekstensi = strtolower(pathinfo($namafile, PATHINFO_EXTENSION));
+
+        if (in_array($ekstensi, $ekstensi_diperbolehkan)) {
+            if ($ukuranfile < 5000000) { // 5MB maksimal
+                $namafilebaru = uniqid() . '.' . $ekstensi;
+                $targetPath = 'uploads/' . $namafilebaru;
+
+                if (move_uploaded_file($tmpName, $targetPath)) {
+                    $gambar = $targetPath;
+                } else {
+                    echo "<script>alert('Gagal mengunggah gambar!');</script>";
+                }
+            } else {
+                echo "<script>alert('Ukuran gambar terlalu besar!');</script>";
+            }
+        } else {
+            echo "<script>alert('Format gambar tidak didukung! Hanya jpg, jpeg, dan png.');</script>";
+        }
     }
 
     $query = "INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -37,58 +59,67 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <title>Tulis Blog</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-            width: 50%;
-            text-align: center;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        textarea {
-            height: auto;
-            resize: vertical;
-            min-height: 150px;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #218838;
-        }
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
+       body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #00273C; /* Warna latar belakang diperbarui */
+        color: white; /* Agar teks lebih terbaca */
+    }
+    .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+        width: 50%;
+        text-align: center;
+        max-height: 90vh;
+        overflow-y: auto;
+        color: black; /* Warna teks dalam container tetap hitam agar terbaca */
+    }
+    input, textarea {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 2px solid #001111; /* Border lebih tegas dengan warna kuning keemasan */
+        border-radius: 5px;
+        background: transparent;
+        color: black; /* Warna teks dalam input */
+    }
+    input::placeholder, textarea::placeholder {
+        color: rgba(255, 255, 255, 0.7); /* Placeholder agar lebih terlihat */
+    }
+    textarea {
+        height: auto;
+        resize: vertical;
+        min-height: 150px;
+    }
+    button {
+        background:rgb(221, 200, 8);
+        color: black;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        
+    }
+    button:hover {
+        background:rgb(255, 242, 0);
+    }
+    .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
     </style>
 </head>
 <body>

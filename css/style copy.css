@@ -8,8 +8,10 @@
 }
 
 body {
-  font-family: var(--mainfont);
-  height: 0px;
+   font-family: var(--mainfont);
+  min-height: 100vh; /* Ganti height: 0px */
+  margin: 0;
+  padding: 0;
 }
 
 .heading {
@@ -89,4 +91,3 @@ body {
 .Internasional h3 {
   font-size: 22px;
 }
-
