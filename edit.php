@@ -7,40 +7,48 @@ if (!isset($_SESSION['username'])) {
     exit();
 }
 
+if (!isset($_GET['id'])) {
+    echo "<script>alert('ID blog tidak ditemukan!'); window.location.href='view.php';</script>";
+    exit();
+}
+
+$id = $_GET['id'];
+$username = $_SESSION['username'];
+$query = "SELECT * FROM halaman WHERE id = ? AND penulis = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("is", $id, $username);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows == 0) {
+    echo "<script>alert('Blog tidak ditemukan atau bukan milik Anda!'); window.location.href='view.php';</script>";
+    exit();
+}
+
+$row = $result->fetch_assoc();
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $penulis = $_SESSION['username'];
     $judul = $_POST['judul'];
     $kutipan = $_POST['kutipan'];
     $isi = $_POST['isi'];
     $kategori = $_POST['kategori'];
-    $tgl_isi = date('Y-m-d H:i:s');
-
-    // Upload gambar
-    $gambar = '';
-    if (!empty($_FILES['gambar']['name'])) {
-        $gambar = 'uploads/' . basename($_FILES['gambar']['name']);
-        move_uploaded_file($_FILES['gambar']['tmp_name'], $gambar);
-    }
-
-    $query = "INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    
+    $query = "UPDATE halaman SET judul = ?, kutipan = ?, isi = ?, kategori = ? WHERE id = ? AND penulis = ?";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("sssssss", $penulis, $judul, $kutipan, $isi, $gambar, $tgl_isi, $kategori);
-
+    $stmt->bind_param("ssssis", $judul, $kutipan, $isi, $kategori, $id, $username);
+    
     if ($stmt->execute()) {
-        echo "<script>alert('Artikel berhasil dipublikasikan!'); window.location.href='view.php';</script>";
+        echo "<script>alert('Artikel berhasil diperbarui!'); window.location.href='view.php';</script>";
     } else {
         echo "<script>alert('Terjadi kesalahan!');</script>";
     }
-
-    $stmt->close();
-    $conn->close();
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <title>Tulis Blog</title>
+    <title>Edit Blog</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -93,22 +101,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <div class="container">
-        <h2>Tulis Blog Baru</h2>
-        <form action="write.php" method="POST" enctype="multipart/form-data">
+        <h2>Edit Blog</h2>
+        <form action="edit.php?id=<?php echo $id; ?>" method="POST">
             <label>Judul:</label>
-            <input type="text" name="judul" required>
+            <input type="text" name="judul" value="<?php echo htmlspecialchars($row['judul']); ?>" required>
             <label>Kutipan:</label>
-            <textarea name="kutipan" required></textarea>
+            <textarea name="kutipan" required><?php echo htmlspecialchars($row['kutipan']); ?></textarea>
             <label>Isi Blog:</label>
-            <textarea name="isi" required></textarea>
+            <textarea name="isi" required><?php echo htmlspecialchars($row['isi']); ?></textarea>
             <label>Kategori:</label>
-            <input type="text" name="kategori" required>
-            <label>Gambar:</label>
-            <input type="file" name="gambar">
-            <button type="submit">Publikasikan</button>
+            <input type="text" name="kategori" value="<?php echo htmlspecialchars($row['kategori']); ?>" required>
+            <button type="submit">Simpan Perubahan</button>
         </form>
         <div class="button-group">
-            <button onclick="window.location.href='view.php'">Lihat Blog</button>
+            <button onclick="window.location.href='view.php'">Kembali</button>
             <button onclick="window.location.href='index.php'">Halaman Utama</button>
         </div>
     </div>
