@@ -1,26 +1,21 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Artikel</title>
-    <link rel="stylesheet" href="css/ditel.css"> 
-</head>
-<body>
-
 <?php
+session_start();
 require_once 'functions.php';
+
 $id = $_GET["id"];
 $rows = query("SELECT * FROM halaman WHERE id = $id");
 $komentars = query("SELECT * FROM komentar WHERE halaman_id = $id ORDER BY tanggal DESC");
+
+// Ambil username dari sesi login
+$username = isset($_SESSION['username']) ? $_SESSION['username'] : "Anonim";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $halaman_id = $_POST["halaman_id"];
     $komentar = $_POST["komentar"];
 
-    // Validasi komentar
+    // Validasi komentar tidak kosong
     if (!empty($komentar)) {
-        $query = "INSERT INTO komentar (halaman_id, komentar, tanggal) VALUES ('$halaman_id', '$komentar', NOW())";
+        $query = "INSERT INTO komentar (halaman_id, nama, komentar, tanggal) VALUES ('$halaman_id', '$username', '$komentar', NOW())";
         mysqli_query($conn, $query);
     }
 
@@ -29,6 +24,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     exit;
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Artikel</title>
+    <link rel="stylesheet" href="css/ditel.css">
+</head>
+<body>
 
 <div class="container">
     <div class="row">
@@ -40,7 +45,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="card-body">
                     <h1 class="card-title"><?= $row['judul']; ?></h1>
                     <hr>
-                    <p class="card-text"><strong>Kutipan:</strong> <?= $row['kutipan']; ?></p>
                     <p class="card-text"><?= nl2br($row['isi']); ?></p>
                 </div>
             </div>
@@ -65,16 +69,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php else : ?>
                             <?php foreach ($komentars as $komentar) : ?>
                                 <div class="comment-container">
-                                    <img src="img/avatar_default.png" alt="Avatar" class="comment-avatar">
                                     <div class="comment-text">
                                         <div class="comment-content">
-                                            <span class="comment-author"><?= $komentar['nama']; ?></span>
-                                            <?= $komentar['komentar']; ?>
+                                            <strong class="comment-author"><?= htmlspecialchars($komentar['nama']); ?></strong><br>
+                                            <?= htmlspecialchars($komentar['komentar']); ?>
                                         </div>
                                         <div class="comment-actions">
                                             <button><i class="fa fa-heart"></i></button>
                                             <button><i class="fa fa-reply"></i></button>
-                                            <small><?= $komentar['tanggal']; ?></small>
+                                            <small><?= date("d M Y H:i", strtotime($komentar['tanggal'])); ?></small>
                                         </div>
                                     </div>
                                 </div>
