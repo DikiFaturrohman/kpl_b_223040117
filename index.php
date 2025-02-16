@@ -47,7 +47,7 @@ $halaman1 = query("SELECT * FROM halaman");
                     memberikan perspektif baru. Oleh karena itu, kami berkomitmen menghadirkan konten berkualitas yang
                     tidak hanya menghibur, tetapi juga memberikan nilai tambah bagi pembaca.
                 </h3>
-                <a class="btn btn-warning btn-lg mt-5" href="#" role="button">Mulai Menulis</a>
+                <a class="btn btn-warning btn-lg mt-5" href="write.php" role="button">Mulai Menulis</a>
                 <hr class="my-5">
             </div>
         </div>
