@@ -26,7 +26,7 @@
                 </button>
             </form>
             <a href="login.php" class="btn btn-warning ms-5 ">Login</a>
-            <!-- <a href="logout.php" class="btn btn-primary ms-2">Log-out</a> -->
+            <a href="logout.php" class="btn btn-warning ms-2">Log-out</a>
         </div>
     </div>
 </nav>

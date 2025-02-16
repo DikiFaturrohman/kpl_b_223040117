@@ -20,7 +20,7 @@ $h = query($query) ?? []; // Pastikan variabel $h selalu berupa array
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard Admin - CAMPUS NEWS</title>
+    <title>Dashboard Admin - CAMPUS BLOG</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -38,11 +38,19 @@ $h = query($query) ?? []; // Pastikan variabel $h selalu berupa array
             height: auto;
             border-radius: 5px;
         }
+            .logout-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        }
+
     </style>
 </head>
 
 <body>
     <div class="container mt-5">
+        <a href="../logout.php" class="btn btn-danger logout-btn">Logout</a>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Dashboard Admin</h2>
             <div>

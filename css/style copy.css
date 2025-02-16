@@ -1,100 +1,93 @@
-:root{
-    /* color */
-    --primaryColor : #00273c;
-    --scondaryColor : #e1c743;
-    /* font */
-    --mainfont : 'Open Sans', sans-serif;
-    --headingfont : 'Merriweather', serif;
-
+:root {
+  /* color */
+  --primaryColor: #00273c;
+  --scondaryColor: #e1c743;
+  /* font */
+  --mainfont: "Open Sans", sans-serif;
+  --headingfont: "Merriweather", serif;
 }
 
-
-body{
-    font-family: var(--mainfont);
-    height: 0px;
+body {
+  font-family: var(--mainfont);
+  height: 0px;
 }
 
-.heading{
-    font-size: var(--headingfont);
-    font-size: 50px;
-    font-weight: 700;
+.heading {
+  font-size: var(--headingfont);
+  font-size: 50px;
+  font-weight: 700;
 }
-.subheading{
-    font-weight: 300;
+.subheading {
+  font-weight: 300;
 }
-.section-margin{
-    margin-top: 100px;
+.section-margin {
+  margin-top: 100px;
 }
 
 /* Navbar */
-.navbar-brand{
-    font-family: var(--headingfont);
-    font-weight: 900;
+.navbar-brand {
+  font-family: var(--headingfont);
+  font-weight: 900;
 }
-.navbar{
-    color: var(--primaryColor) !important;
-    background-color: #00273c;
+.navbar {
+  color: var(--primaryColor) !important;
+  background-color: #00273c;
 }
-.navbar-brand span{
-    color: var(--scondaryColor);
+.navbar-brand span {
+  color: var(--scondaryColor);
 }
-.nav-link{
-    font-family: var(--headingfont);
+.nav-link {
+  font-family: var(--headingfont);
 }
-.nav-link.active{
-    font-weight: 700;
-    color: var(--scondaryColor) !important;
+.nav-link.active {
+  font-weight: 700;
+  color: var(--scondaryColor) !important;
 }
-.icons-home i{
-    font-size: 1.8rem;
-    color: var(--scondaryColor);
+.icons-home i {
+  font-size: 1.8rem;
+  color: var(--scondaryColor);
 }
-
-
 
 /* Home */
-.home{
-    background-color: var(--primaryColor);
-    /* padding-top: 10rem; */
+.home {
+  background-color: var(--primaryColor);
+  /* padding-top: 10rem; */
 }
-.home .heading{
-color: var(--scondaryColor);
+.home .heading {
+  color: var(--scondaryColor);
 }
-.btn-home .btn-buy{
-    background-color: var(--scondaryColor);
-    font-family: var(--headingfont);
-    font-weight: 700;
+.btn-home .btn-buy {
+  background-color: var(--scondaryColor);
+  font-family: var(--headingfont);
+  font-weight: 700;
 }
-.btn-home .btn-learn{
-    border: 2px solid var(--scondaryColor) ;
-    color: var(--scondaryColor);
-    font-family: var(--headingfont);
-    font-weight: 700;
+.btn-home .btn-learn {
+  border: 2px solid var(--scondaryColor);
+  color: var(--scondaryColor);
+  font-family: var(--headingfont);
+  font-weight: 700;
 }
 
 /* service */
-.card-service{
-    background-color: var(--primaryColor);
-    color: #fff;
+.card-service {
+  background-color: var(--primaryColor);
+  color: #fff;
 }
 
-
-.card-service .btn-service{
-    border: 2px solid var(--scondaryColor);
-    color: var(--scondaryColor);
-    font-family: var(--headingfont);
-    font-weight: 700;
+.card-service .btn-service {
+  border: 2px solid var(--scondaryColor);
+  color: var(--scondaryColor);
+  font-family: var(--headingfont);
+  font-weight: 700;
 }
-.card-service .btn-service:hover{
-    background-color: var(--scondaryColor);
-    color: var(--primaryColor);
+.card-service .btn-service:hover {
+  background-color: var(--scondaryColor);
+  color: var(--primaryColor);
 }
-
-
 
 /*internasional*/
-.Internasional h3{
-    font-size: 22px;
+.Internasional h3 {
+  font-size: 22px;
 }
 
 
