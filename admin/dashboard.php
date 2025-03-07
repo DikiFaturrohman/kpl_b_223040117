@@ -2,16 +2,26 @@
 session_start();
 require '../functions.php';
 
+if (!isset($_SESSION['loggedin']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.php");
+    exit();
+}
+
 // Ambil data halaman dari database
 $h = [];
 if (isset($_GET['keyword'])) {
-    $keyword = $_GET['keyword'];
-    $query = "SELECT * FROM halaman WHERE judul LIKE '%$keyword%' OR penulis LIKE '%$keyword%' OR kategori LIKE '%$keyword%'";
+    $keyword = filter_input(INPUT_GET, 'keyword', FILTER_SANITIZE_STRING);
+    if ($keyword !== false && $keyword !== null) {
+        $query = "SELECT * FROM halaman WHERE judul LIKE :keyword OR penulis LIKE :keyword OR kategori LIKE :keyword";
+        $h = query($query, [':keyword' => "%" . $keyword . "%"]);
+    } else {
+        $query = "SELECT * FROM halaman";
+        $h = query($query);
+    }
 } else {
     $query = "SELECT * FROM halaman";
+    $h = query($query);
 }
-
-$h = query($query) ?? []; // Pastikan variabel $h selalu berupa array
 ?>
 
 <!doctype html>
@@ -62,13 +72,14 @@ $h = query($query) ?? []; // Pastikan variabel $h selalu berupa array
 
 <body>
     <div class="container mt-5">
-        <a href="../logout.php" class="btn btn-danger logout-btn">Logout</a>
+
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Dashboard Admin</h2>
             <div>
                 <a href="tambah.php" class="btn btn-success">Tambah Data</a>
                 <button class="btn btn-danger" onclick="window.print()">Download</button>
+                <a href="../logout.php" class="btn btn-danger">Logout</a>
             </div>
         </div>
 
@@ -97,7 +108,7 @@ $h = query($query) ?? []; // Pastikan variabel $h selalu berupa array
                 <tbody>
                     <?php if (!empty($h)): ?>
                     <?php $no = 1; ?>
-                    <?php foreach ($h as $item) : ?>
+                    <?php foreach ($h as $item): ?>
                     <tr>
                         <td><?= $no; ?></td>
                         <td><img src="../img/<?= $item["gambar"]; ?>" alt="Gambar"></td>
@@ -110,11 +121,10 @@ $h = query($query) ?? []; // Pastikan variabel $h selalu berupa array
                         <td>
                             <div class="action-buttons">
                                 <a href="ubah.php?id=<?= $item["id"]; ?>" class="btn btn-warning btn-sm">Ubah</a>
-                                <a href="hapus.php?id=<?= $item["id"]; ?>" class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Yakin ingin menghapus?')">Hapus</a>
+                                <a href="hapus.php?id=<?= $item["id"]; ?>" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Yakin ingin menghapus blog ini?');">Hapus</a>
                             </div>
                         </td>
-
                     </tr>
                     <?php $no++; ?>
                     <?php endforeach; ?>

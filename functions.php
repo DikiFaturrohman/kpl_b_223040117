@@ -1,16 +1,39 @@
 <?php
-// koneksi
-$conn = mysqli_connect("localhost", "root", "", "news");
 
-function query($query)
+
+require 'db_connect.php'; // Koneksi PDO
+
+function generateCSRFToken()
+{
+    return bin2hex(random_bytes(32));
+}
+
+function setCSRFToken()
+{
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = generateCSRFToken();
+    }
+}
+
+function checkCSRFToken($token)
+{
+    if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
+        return false; // Token tidak valid
+    }
+    return true; // Token valid
+}
+
+function query($query, $params = [])
 {
     global $conn;
-    $result = mysqli_query($conn, $query);
-    $rows = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $rows[] = $row;
+    try {
+        $stmt = $conn->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("PDO Exception in query function: " . $e->getMessage());
+        return false; // or handle the error as appropriate
     }
-    return $rows;
 }
 
 function registrasi($data)
@@ -18,101 +41,103 @@ function registrasi($data)
     global $conn;
 
     $username = strtolower(stripslashes($data["username"]));
-    $email = mysqli_real_escape_string($conn, $data["email"]);
-    $password = mysqli_real_escape_string($conn, $data["password"]);
-    $password2 = mysqli_real_escape_string($conn, $data["password2"]);
-    $role = isset($data["role"]) ? $data["role"] : ""; // Assign an empty string if the "role" key is not set
+    $email = filter_var($data["email"], FILTER_VALIDATE_EMAIL);
 
-    // Cek username sudah ada atau belum
-    $result = mysqli_query($conn, "SELECT username FROM users WHERE username = '$username'");
-    if (mysqli_fetch_assoc($result)) {
-        echo "<script>
-        alert('Username sudah terdaftar!');
-        </script>";
+    if ($email === false) {
+        echo "<script>alert('Format email tidak valid!');</script>";
         return false;
     }
 
-    // Cek konfirmasi password
+    $password = $data["password"];
+    $password2 = $data["password2"];
+
     if ($password !== $password2) {
-        echo "<script>
-            alert('Konfirmasi password tidak sesuai!');
-        </script>";
+        echo "<script>alert('Konfirmasi password tidak sesuai!');</script>";
         return false;
     }
 
-    // Enkripsi password
     $password = password_hash($password, PASSWORD_DEFAULT);
+    try {
+        $stmt = $conn->prepare("SELECT username FROM users WHERE username = :username");
+        $stmt->execute([':username' => $username]);
 
-    // Tambahkan user baru ke database 
-    mysqli_query($conn, "INSERT INTO users (username,email, password) VALUES ('$username','$email', '$password')");
+        if ($stmt->fetch()) {
+            echo "<script>alert('Username sudah terdaftar!');</script>";
+            return false;
+        }
 
-    return mysqli_affected_rows($conn);
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
+        $stmt->execute([':username' => $username, ':email' => $email, ':password' => $password]);
+
+        return true; // Berhasil registrasi
+    } catch (PDOException $e) {
+        error_log("PDO Exception in registrasi function: " . $e->getMessage());
+        echo "<script>alert('Error saat registrasi: " . $e->getMessage() . "');</script>";
+        return false;
+    }
 }
 
 function login($email, $password)
 {
     global $conn;
-    $email = mysqli_real_escape_string($conn, $email);
 
-    $query = "SELECT * FROM users WHERE email = '$email'";
-    $result = mysqli_query($conn, $query);
+    try {
+        $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt->execute([':email' => $email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($result && mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-        $hashedPassword = $row['password'];
-
-        // Verifikasi password
-        if (password_verify($password, $hashedPassword)) {
-            // Password cocok, login berhasil
+        if ($row && password_verify($password, $row['password'])) {
             return $row;
         } else {
-            // Password tidak cocok
             return false;
         }
-    } else {
-        // Pengguna tidak ditemukan
+    } catch (PDOException $e) {
+        error_log("PDO Exception in login function: " . $e->getMessage());
         return false;
     }
 }
-
-
-
-
-
 
 function tambah($data)
 {
     global $conn;
 
-    $penulis = mysqli_real_escape_string($conn, $data['penulis']);
-    $judul = mysqli_real_escape_string($conn, $data['judul']);
-    $kutipan = mysqli_real_escape_string($conn, $data['kutipan']);
-    $isi = mysqli_real_escape_string($conn, $data['isi']);
-    $kategori = mysqli_real_escape_string($conn, $data['kategori']);
+    $penulis = htmlspecialchars($data['penulis']);
+    $judul = htmlspecialchars($data['judul']);
+    $kutipan = htmlspecialchars($data['kutipan']);
+    $isi = htmlspecialchars($data['isi']);
+    $kategori = htmlspecialchars($data['kategori']);
 
-    // Upload gambar dan dapatkan nama file baru
     $gambar = upload();
-
     if (!$gambar) {
-        return false; // Jika upload gambar gagal, hentikan fungsi tambah()
+        return false;
     }
 
-    // Query SQL untuk memasukkan data ke dalam tabel
-    $query = "INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) 
-              VALUES ('$penulis', '$judul', '$kutipan', '$isi', '$gambar', NOW(), '$kategori')";
+    try {
+        $stmt = $conn->prepare("INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) 
+                               VALUES (:penulis, :judul, :kutipan, :isi, :gambar, NOW(), :kategori)");
 
-    mysqli_query($conn, $query);
+        $stmt->execute([
+            ':penulis' => $penulis,
+            ':judul' => $judul,
+            ':kutipan' => $kutipan,
+            ':isi' => $isi,
+            ':gambar' => $gambar,
+            ':kategori' => $kategori
+        ]);
 
-    return mysqli_affected_rows($conn);
+        return true;
+    } catch (PDOException $e) {
+        error_log("PDO Exception in tambah function: " . $e->getMessage());
+        echo "<script>alert('Error saat menambahkan data: " . $e->getMessage() . "');</script>";
+        return false;
+    }
 }
-
 
 function upload()
 {
-    // Cek apakah input file 'gambar' ada
-    if (!isset($_FILES['gambar'])) {
-        var_dump($_FILES['gambar']);
-        return "Gambar tidak ditemukan";
+    if (!isset($_FILES['gambar']) || $_FILES['gambar']['error'] === UPLOAD_ERR_NO_FILE) {
+        echo "<script>alert('Pilih gambar terlebih dahulu');</script>";
+        return false;
     }
 
     $namafile = $_FILES['gambar']['name'];
@@ -120,40 +145,45 @@ function upload()
     $error = $_FILES['gambar']['error'];
     $tmpName = $_FILES['gambar']['tmp_name'];
 
-    // Cek apakah tidak ada gambar yang diupload
-    if ($error === 4) {
-        return "Pilih gambar terlebih dahulu";
-    }
-
-    // Cek apakah yang diupload adalah gambar
     $ekstensigambarValid = ['jpg', 'jpeg', 'png'];
-    $ekstensigambar = explode('.', $namafile);
-    $ekstensigambar = strtolower(end($ekstensigambar));
+    $ekstensigambar = strtolower(pathinfo($namafile, PATHINFO_EXTENSION));
+
     if (!in_array($ekstensigambar, $ekstensigambarValid)) {
-        return "Yang Anda upload bukan gambar";
+        echo "<script>alert('Yang Anda upload bukan gambar');</script>";
+        return false;
     }
 
-    // Cek jika ukurannya terlalu besar
-    if ($ukuranfile > 50000000) {
-        return "Ukuran gambar terlalu besar";
+    if ($ukuranfile > 5000000) {
+        echo "<script>alert('Ukuran gambar terlalu besar');</script>";
+        return false;
     }
 
-    // Lolos pengecekan, gambar siap diupload
-    // Generate nama gambar baru
-    $namafilebaru = uniqid();
-    $namafilebaru .= '.';
-    $namafilebaru .= $ekstensigambar;
+    $namafilebaru = uniqid() . '.' . $ekstensigambar;
+    $targetPath = '../img/' . $namafilebaru;
 
-    move_uploaded_file($tmpName, '../img/' . $namafilebaru);
-
-    return $namafilebaru;
+    if (move_uploaded_file($tmpName, $targetPath)) {
+        return $namafilebaru;
+    } else {
+        echo "<script>alert('Gagal mengupload gambar');</script>";
+        return false;
+    }
 }
+
 function hapus($id)
 {
     global $conn;
-    mysqli_query($conn, ("DELETE FROM halaman WHERE id = $id"));
-    return mysqli_affected_rows($conn);
+
+    try {
+        $stmt = $conn->prepare("DELETE FROM halaman WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return true;
+    } catch (PDOException $e) {
+        error_log("PDO Exception in hapus function: " . $e->getMessage());
+        echo "<script>alert('Error saat menghapus data: " . $e->getMessage() . "');</script>";
+        return false;
+    }
 }
+
 function ubah($data)
 {
     global $conn;
@@ -161,35 +191,32 @@ function ubah($data)
     $id = $data['id'];
     $gambarLama = $data['gambarLama'];
 
-    // Menghindari SQL Injection
-    $penulis = $conn->real_escape_string($data['penulis']);
-    $judul = $conn->real_escape_string($data['judul']);
-    $kutipan = $conn->real_escape_string($data['kutipan']);
-    $isi = $conn->real_escape_string($data['isi']);
-    $kategori = $conn->real_escape_string($data['kategori']);
+    $penulis = htmlspecialchars($data['penulis']);
+    $judul = htmlspecialchars($data['judul']);
+    $kutipan = htmlspecialchars($data['kutipan']);
+    $isi = htmlspecialchars($data['isi']);
+    $kategori = htmlspecialchars($data['kategori']);
 
-    // Memanggil fungsi upload untuk mengunggah gambar
-    $gambarBaru = upload();
-    if ($gambarBaru === "Gambar tidak ditemukan" || $gambarBaru === "Pilih gambar terlebih dahulu" || $gambarBaru === "Yang Anda upload bukan gambar" || $gambarBaru === "Ukuran gambar terlalu besar") {
-        // Menggunakan gambar lama jika gagal mengunggah gambar baru
-        $gambar = $gambarLama;
-    } else {
-        // Menghapus gambar lama jika berhasil mengunggah gambar baru
-        if ($gambarLama != 'default.jpg') {
-            unlink('../img/' . $gambarLama);
-        }
-        $gambar = $gambarBaru;
-    }
+    $gambar = $_FILES['gambar']['name'] ? upload() : $gambarLama; //Only upload new image if there is one
 
-    // Menyiapkan pernyataan SQL untuk memperbarui data di tabel halaman
-    $sql = "UPDATE halaman SET penulis='$penulis', judul='$judul', kutipan='$kutipan', isi='$isi', kategori='$kategori', gambar='$gambar' WHERE id='$id'";
+    try {
+        $stmt = $conn->prepare("UPDATE halaman SET penulis=:penulis, judul=:judul, kutipan=:kutipan, isi=:isi, kategori=:kategori, gambar=:gambar WHERE id=:id");
+        $stmt->execute([
+            ':penulis' => $penulis,
+            ':judul' => $judul,
+            ':kutipan' => $kutipan,
+            ':isi' => $isi,
+            ':kategori' => $kategori,
+            ':gambar' => $gambar,
+            ':id' => $id
+        ]);
 
-    if ($conn->query($sql) === TRUE) {
         return true;
-    } else {
+    } catch (PDOException $e) {
+        error_log("PDO Exception in ubah function: " . $e->getMessage());
+        echo "<script>alert('Error saat mengubah data: " . $e->getMessage() . "');</script>";
         return false;
     }
-
-    // Menutup koneksi
-    $conn->close();
 }
+
+setCSRFToken(); // Inisialisasi token CSRF

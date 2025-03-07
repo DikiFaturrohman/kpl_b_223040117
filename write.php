@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'db_connect.php';
+require 'functions.php';
 
 if (!isset($_SESSION['username'])) {
     header("Location: login.php");
@@ -8,72 +8,62 @@ if (!isset($_SESSION['username'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!checkCSRFToken($_POST['csrf_token'])) {
+        die("CSRF token tidak valid.");
+    }
+
     $penulis = $_SESSION['username'];
-    $judul = $_POST['judul'];
-    $kutipan = $_POST['kutipan'];
-    $isi = $_POST['isi'];
-    $kategori = $_POST['kategori'];
+    $judul = htmlspecialchars($_POST['judul']);
+    $kutipan = htmlspecialchars($_POST['kutipan']);
+    $isi = htmlspecialchars($_POST['isi']);
+    $kategori = htmlspecialchars($_POST['kategori']);
     $tgl_isi = date('Y-m-d H:i:s');
 
-    // Validasi unggahan gambar
-    $gambar = '';
-    if (!empty($_FILES['gambar']['name'])) {
-        $ekstensi_diperbolehkan = ['jpg', 'jpeg', 'png'];
-        $namafile = $_FILES['gambar']['name'];
-        $ukuranfile = $_FILES['gambar']['size'];
-        $error = $_FILES['gambar']['error'];
-        $tmpName = $_FILES['gambar']['tmp_name'];
+    $gambar = upload();
 
-        $ekstensi = strtolower(pathinfo($namafile, PATHINFO_EXTENSION));
+    try {
+        global $conn;
+        $query = "INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) 
+                  VALUES (:penulis, :judul, :kutipan, :isi, :gambar, :tgl_isi, :kategori)";
+        $stmt = $conn->prepare($query);
+        $stmt->execute([
+            ':penulis' => $penulis,
+            ':judul' => $judul,
+            ':kutipan' => $kutipan,
+            ':isi' => $isi,
+            ':gambar' => $gambar,
+            ':tgl_isi' => $tgl_isi,
+            ':kategori' => $kategori
+        ]);
 
-        if (in_array($ekstensi, $ekstensi_diperbolehkan)) {
-            if ($ukuranfile < 5000000) { // 5MB maksimal
-                $namafilebaru = uniqid() . '.' . $ekstensi;
-                $targetPath = 'uploads/' . $namafilebaru;
-
-                if (move_uploaded_file($tmpName, $targetPath)) {
-                    $gambar = $targetPath;
-                } else {
-                    echo "<script>alert('Gagal mengunggah gambar!');</script>";
-                }
-            } else {
-                echo "<script>alert('Ukuran gambar terlalu besar!');</script>";
-            }
-        } else {
-            echo "<script>alert('Format gambar tidak didukung! Hanya jpg, jpeg, dan png.');</script>";
-        }
-    }
-
-    $query = "INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("sssssss", $penulis, $judul, $kutipan, $isi, $gambar, $tgl_isi, $kategori);
-
-    if ($stmt->execute()) {
         echo "<script>alert('Artikel berhasil dipublikasikan!'); window.location.href='view.php';</script>";
-    } else {
+    } catch (PDOException $e) {
+        error_log("PDO Exception in write.php: " . $e->getMessage());
         echo "<script>alert('Terjadi kesalahan!');</script>";
     }
-
-    $stmt->close();
-    $conn->close();
 }
-?>
 
+setCSRFToken(); // Ensure CSRF token is set before the form
+?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <title>Tulis Blog</title>
     <style>
-       body {
+    body {
         font-family: Arial, sans-serif;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #00273C; /* Warna latar belakang diperbarui */
-        color: white; /* Agar teks lebih terbaca */
+        background-color: #00273C;
+        /* Warna latar belakang diperbarui */
+        color: white;
+        /* Agar teks lebih terbaca */
     }
+
     .container {
         background: white;
         padding: 30px;
@@ -83,37 +73,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         text-align: center;
         max-height: 90vh;
         overflow-y: auto;
-        color: black; /* Warna teks dalam container tetap hitam agar terbaca */
+        color: black;
+        /* Warna teks dalam container tetap hitam agar terbaca */
     }
-    input, textarea {
+
+    input,
+    textarea {
         width: 100%;
         padding: 10px;
         margin: 10px 0;
-        border: 2px solid #001111; /* Border lebih tegas dengan warna kuning keemasan */
+        border: 2px solid #001111;
+        /* Border lebih tegas dengan warna kuning keemasan */
         border-radius: 5px;
         background: transparent;
-        color: black; /* Warna teks dalam input */
+        color: black;
+        /* Warna teks dalam input */
     }
-    input::placeholder, textarea::placeholder {
-        color: rgba(255, 255, 255, 0.7); /* Placeholder agar lebih terlihat */
+
+    input::placeholder,
+    textarea::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+        /* Placeholder agar lebih terlihat */
     }
+
     textarea {
         height: auto;
         resize: vertical;
         min-height: 150px;
     }
+
     button {
-        background:rgb(221, 200, 8);
+        background: rgb(221, 200, 8);
         color: black;
         padding: 12px 20px;
         border: none;
         border-radius: 5px;
         cursor: pointer;
-        
+
     }
+
     button:hover {
-        background:rgb(255, 242, 0);
+        background: rgb(255, 242, 0);
     }
+
     .button-group {
         display: flex;
         justify-content: center;
@@ -122,10 +124,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>Tulis Blog Baru</h2>
         <form action="write.php" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
             <label>Judul:</label>
             <input type="text" name="judul" required>
             <label>Kutipan:</label>
@@ -144,4 +148,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </body>
+
 </html>

@@ -1,45 +1,53 @@
 <?php
 session_start();
-include 'db_connect.php';
+require 'functions.php';
 
 if (!isset($_SESSION['username'])) {
     header("Location: login.php");
     exit();
 }
 
-if (!isset($_GET['id'])) {
-    echo "<script>alert('ID blog tidak ditemukan!'); window.location.href='view.php';</script>";
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if ($id === false || $id === null) {
+    echo "<script>alert('ID tidak valid!'); window.location.href='view.php';</script>";
     exit();
 }
 
-$id = $_GET['id'];
-$username = $_SESSION['username'];
-$query = "SELECT * FROM halaman WHERE id = ? AND penulis = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("is", $id, $username);
-$stmt->execute();
-$result = $stmt->get_result();
+$query = "SELECT * FROM halaman WHERE id = :id AND penulis = :penulis";
+$params = [':id' => $id, ':penulis' => $_SESSION['username']];
+$halaman = query($query, $params);
 
-if ($result->num_rows == 0) {
+if (!$halaman) {
     echo "<script>alert('Blog tidak ditemukan atau bukan milik Anda!'); window.location.href='view.php';</script>";
     exit();
 }
 
-$row = $result->fetch_assoc();
+$row = $halaman[0];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $judul = $_POST['judul'];
-    $kutipan = $_POST['kutipan'];
-    $isi = $_POST['isi'];
-    $kategori = $_POST['kategori'];
-    
-    $query = "UPDATE halaman SET judul = ?, kutipan = ?, isi = ?, kategori = ? WHERE id = ? AND penulis = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssssis", $judul, $kutipan, $isi, $kategori, $id, $username);
-    
-    if ($stmt->execute()) {
+    if (!checkCSRFToken($_POST['csrf_token'])) {
+        die("CSRF token tidak valid.");
+    }
+
+    $judul = htmlspecialchars($_POST['judul']);
+    $kutipan = htmlspecialchars($_POST['kutipan']);
+    $isi = htmlspecialchars($_POST['isi']);
+    $kategori = htmlspecialchars($_POST['kategori']);
+
+    $query = "UPDATE halaman SET judul = :judul, kutipan = :kutipan, isi = :isi, kategori = :kategori WHERE id = :id AND penulis = :penulis";
+    $params = [
+        ':judul' => $judul,
+        ':kutipan' => $kutipan,
+        ':isi' => $isi,
+        ':kategori' => $kategori,
+        ':id' => $id,
+        ':penulis' => $_SESSION['username']
+    ];
+    try {
+        $stmt = $conn->prepare($query);
+        $stmt->execute($params);
         echo "<script>alert('Artikel berhasil diperbarui!'); window.location.href='view.php';</script>";
-    } else {
+    } catch (PDOException $e) {
         echo "<script>alert('Terjadi kesalahan!');</script>";
     }
 }
@@ -47,62 +55,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <title>Edit Blog</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-            width: 50%;
-            text-align: center;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        textarea {
-            height: auto;
-            resize: vertical;
-            min-height: 150px;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #218838;
-        }
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+    }
+
+    .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+        width: 50%;
+        text-align: center;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    input,
+    textarea {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+
+    textarea {
+        height: auto;
+        resize: vertical;
+        min-height: 150px;
+    }
+
+    button {
+        background: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #218838;
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>Edit Blog</h2>
         <form action="edit.php?id=<?php echo $id; ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
             <label>Judul:</label>
             <input type="text" name="judul" value="<?php echo htmlspecialchars($row['judul']); ?>" required>
             <label>Kutipan:</label>
@@ -119,4 +137,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </body>
+
 </html>
