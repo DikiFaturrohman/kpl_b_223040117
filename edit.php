@@ -1,141 +1,116 @@
 <?php
 session_start();
-require 'functions.php';
+require_once 'functions.php';
 
-if (!isset($_SESSION['username'])) {
+// Pastikan pengguna sudah login
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    set_flash_message('login_info', 'Anda harus login untuk mengedit artikel.', 'info');
     header("Location: login.php");
     exit();
 }
-
-$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-if ($id === false || $id === null) {
-    echo "<script>alert('ID tidak valid!'); window.location.href='view.php';</script>";
+// Admin tidak diarahkan dari sini, karena mereka punya dashboard sendiri.
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    set_flash_message('admin_info_edit', 'Admin dapat mengedit artikel melalui Admin Panel.', 'info');
+    header("Location: admin/dasboard.php");
     exit();
 }
 
-$query = "SELECT * FROM halaman WHERE id = :id AND penulis = :penulis";
-$params = [':id' => $id, ':penulis' => $_SESSION['username']];
-$halaman = query($query, $params);
-
-if (!$halaman) {
-    echo "<script>alert('Blog tidak ditemukan atau bukan milik Anda!'); window.location.href='view.php';</script>";
+$id_artikel = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if (!$id_artikel) {
+    set_flash_message('artikel_user_error', 'ID Artikel tidak valid untuk diedit.', 'danger');
+    header("Location: view.php"); // Kembali ke daftar artikel pengguna
     exit();
 }
 
-$row = $halaman[0];
+// Ambil data artikel yang akan diedit, pastikan milik user yang login
+$username_session = $_SESSION['username'];
+$stmt_artikel = query("SELECT * FROM halaman WHERE id = :id AND penulis = :penulis", [':id' => $id_artikel, ':penulis' => $username_session]);
+$artikel = $stmt_artikel ? $stmt_artikel->fetch() : null;
+
+if (!$artikel) {
+    set_flash_message('artikel_user_error', 'Artikel tidak ditemukan atau Anda tidak berhak mengeditnya.', 'danger');
+    header("Location: view.php");
+    exit();
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (!checkCSRFToken($_POST['csrf_token'])) {
-        die("CSRF token tidak valid.");
+    if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
+        set_flash_message('artikel_user_error', 'Sesi tidak valid atau telah kedaluwarsa. Silakan coba lagi.', 'danger');
+        $_SESSION['old_input_edit_user'] = $_POST;
+        header("Location: edit.php?id=" . $id_artikel);
+        exit();
     }
 
-    $judul = htmlspecialchars($_POST['judul']);
-    $kutipan = htmlspecialchars($_POST['kutipan']);
-    $isi = htmlspecialchars($_POST['isi']);
-    $kategori = htmlspecialchars($_POST['kategori']);
-
-    $query = "UPDATE halaman SET judul = :judul, kutipan = :kutipan, isi = :isi, kategori = :kategori WHERE id = :id AND penulis = :penulis";
-    $params = [
-        ':judul' => $judul,
-        ':kutipan' => $kutipan,
-        ':isi' => $isi,
-        ':kategori' => $kategori,
-        ':id' => $id,
-        ':penulis' => $_SESSION['username']
+    $data_update = [
+        'id' => $id_artikel,
+        'penulis' => $username_session, // Penulis tidak bisa diubah oleh user, tetap dari sesi
+        'judul' => trim($_POST['judul']),
+        'kutipan' => trim($_POST['kutipan']),
+        'isi' => trim($_POST['isi']),
+        'kategori' => trim($_POST['kategori']),
+        'gambarLama' => $artikel['gambar'] // Kirim nama gambar lama ke fungsi ubah
+        // 'current_user_role' => 'user' // Flag jika fungsi ubah_artikel butuh info role
     ];
-    try {
-        $stmt = $conn->prepare($query);
-        $stmt->execute($params);
-        echo "<script>alert('Artikel berhasil diperbarui!'); window.location.href='view.php';</script>";
-    } catch (PDOException $e) {
-        echo "<script>alert('Terjadi kesalahan!');</script>";
+
+    // Menggunakan fungsi ubah_artikel dari functions.php
+    // Fungsi ini harus memastikan bahwa user hanya bisa update artikelnya sendiri jika ada parameter penulis
+    // atau pengecekan kepemilikan sudah dilakukan sebelum memanggilnya.
+    // Di sini, query SELECT di awal sudah memastikan kepemilikan.
+    if (ubah_artikel($data_update)) {
+        set_flash_message('artikel_user_success', 'Artikel Anda berhasil diperbarui!', 'success');
+        header("Location: view.php");
+        exit();
+    } else {
+        // Pesan error sudah di-set oleh ubah_artikel() atau upload_gambar()
+        $_SESSION['old_input_edit_user'] = $_POST;
+        header("Location: edit.php?id=" . $id_artikel);
+        exit();
     }
 }
-?>
 
+$csrf_token_edit_user = $_SESSION['csrf_token'];
+// Jika ada old_input dari error validasi sebelumnya, gunakan itu. Jika tidak, gunakan data dari DB.
+$form_data = $_SESSION['old_input_edit_user'] ?? $artikel;
+unset($_SESSION['old_input_edit_user']);
+?>
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-    <title>Edit Blog</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Artikel: <?= htmlspecialchars($artikel['judul']); ?> - CAMPUS BLOG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-    body {
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-color: #f4f4f4;
-    }
-
-    .container {
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-        width: 50%;
-        text-align: center;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    input,
-    textarea {
-        width: 100%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-    }
-
-    textarea {
-        height: auto;
-        resize: vertical;
-        min-height: 150px;
-    }
-
-    button {
-        background: #28a745;
-        color: white;
-        padding: 12px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    button:hover {
-        background: #218838;
-    }
-
-    .button-group {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 15px;
-    }
+        body { font-family: 'Open Sans', sans-serif; background-color: #f8f9fa; color: #333; }
+        .container-form { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); margin-top: 30px; max-width: 800px;}
+        .form-label { font-weight: 500; }
+        .current-image { max-width: 180px; height: auto; margin-top: 8px; border-radius: 5px; border: 1px solid #ccc; }
+        .btn-custom-update { background-color: #198754; border-color: #198754; color:white; }
+        .btn-custom-update:hover { background-color: #157347; border-color: #146c43; }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h2>Edit Blog</h2>
-        <form action="edit.php?id=<?php echo $id; ?>" method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-            <label>Judul:</label>
-            <input type="text" name="judul" value="<?php echo htmlspecialchars($row['judul']); ?>" required>
-            <label>Kutipan:</label>
-            <textarea name="kutipan" required><?php echo htmlspecialchars($row['kutipan']); ?></textarea>
-            <label>Isi Blog:</label>
-            <textarea name="isi" required><?php echo htmlspecialchars($row['isi']); ?></textarea>
-            <label>Kategori:</label>
-            <input type="text" name="kategori" value="<?php echo htmlspecialchars($row['kategori']); ?>" required>
-            <button type="submit">Simpan Perubahan</button>
-        </form>
-        <div class="button-group">
-            <button onclick="window.location.href='view.php'">Kembali</button>
-            <button onclick="window.location.href='index.php'">Halaman Utama</button>
-        </div>
-    </div>
-</body>
+    <?php include_once 'nav.php'; ?>
 
-</html>
+    <div class="container container-form">
+        <div class="text-center mb-4">
+            <i class="fas fa-edit fa-3x text-success"></i>
+            <h2 class="mt-2">Edit Artikel Anda</h2>
+            <p class="text-muted">Perbarui detail artikel "<strong><?= htmlspecialchars($artikel['judul']); ?></strong>".</p>
+        </div>
+
+        <?= get_flash_message('artikel_user_error'); ?>
+        <?= get_flash_message('upload_error'); ?>
+
+        <form method="POST" action="edit.php?id=<?= $id_artikel; ?>" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token_edit_user); ?>">
+
+            <div class="mb-3">
+                <label for="judul" class="form-label">Judul Artikel <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-lg" id="judul" name="judul" value="<?= htmlspecialchars($form_data['judul'] ?? ''); ?>" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="kutipan" class="form-label">Kutipan Singkat (Opsional)</label>
+                <textarea class="form-control" id="

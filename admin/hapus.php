@@ -1,22 +1,41 @@
 <?php
 session_start();
-require 'functions.php';
+require_once '../functions.php';
 
-if (!isset($_SESSION['username'])) {
-    header("Location: login.php");
+if (!isset($_SESSION['loggedin']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    set_flash_message('login_error', 'Anda harus login sebagai admin.', 'danger');
+    header("Location: ../login.php");
     exit();
 }
 
-$penulis = $_SESSION['username'];
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
+        set_flash_message('artikel_error', 'Sesi tidak valid atau telah kedaluwarsa. Gagal menghapus.', 'danger');
+        header("Location: dasboard.php");
+        exit();
+    }
 
-$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-if ($id === false || $id === null) {
-    echo "<script>alert('ID tidak valid'); window.location.href='dashboard.php';</script>";
+    $id_artikel = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+    if (!$id_artikel) {
+        set_flash_message('artikel_error', 'ID Artikel tidak valid untuk dihapus.', 'danger');
+        header("Location: dasboard.php");
+        exit();
+    }
+
+    // Panggil fungsi hapus_artikel dari functions.php
+    // Argumen ketiga true menandakan ini adalah operasi admin
+    if (hapus_artikel($id_artikel, null, true)) {
+        set_flash_message('artikel_success', 'Artikel berhasil dihapus!', 'success');
+    } else {
+        // Pesan error sudah di-set oleh hapus_artikel()
+    }
+    header("Location: dasboard.php");
     exit();
-}
 
-if (hapus($id)) {
-    echo "<script>alert('Artikel berhasil dihapus!'); window.location.href='view.php';</script>";
 } else {
-    echo "<script>alert('Gagal menghapus artikel.'); window.location.href='view.php';</script>";
+    // Jika diakses via GET, redirect atau tampilkan error
+    set_flash_message('artikel_error', 'Permintaan tidak valid.', 'danger');
+    header("Location: dasboard.php");
+    exit();
 }
+?>

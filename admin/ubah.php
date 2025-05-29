@@ -1,80 +1,120 @@
 <?php
-require '../functions.php';
+session_start();
+require_once '../functions.php';
 
-$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-if ($id === false || $id === null) {
-    die("ID tidak valid.");
+if (!isset($_SESSION['loggedin']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    set_flash_message('login_error', 'Anda harus login sebagai admin.', 'danger');
+    header("Location: ../login.php");
+    exit();
 }
 
-$h = query("SELECT * FROM halaman WHERE id = :id", [':id' => $id])[0];
-if (!$h) {
-    die("Data tidak ditemukan.");
+$id_artikel = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if (!$id_artikel) {
+    set_flash_message('artikel_error', 'ID Artikel tidak valid.', 'danger');
+    header("Location: dasboard.php");
+    exit();
+}
+
+// Ambil data artikel yang akan diubah
+$stmt_artikel = query("SELECT * FROM halaman WHERE id = :id", [':id' => $id_artikel]);
+$artikel = $stmt_artikel ? $stmt_artikel->fetch() : null;
+
+if (!$artikel) {
+    set_flash_message('artikel_error', 'Artikel tidak ditemukan.', 'danger');
+    header("Location: dasboard.php");
+    exit();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (!checkCSRFToken($_POST['csrf_token'])) {
-        die("CSRF token tidak valid.");
+    if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
+        set_flash_message('artikel_error', 'Sesi tidak valid atau telah kedaluwarsa. Silakan coba lagi.', 'danger');
+        $_SESSION['old_input_ubah'] = $_POST;
+        header("Location: ubah.php?id=" . $id_artikel);
+        exit();
     }
 
-    $_POST['id'] = $id;  // Make sure the ID is passed for the update
-    if (ubah($_POST)) {
-        echo "<script>alert('Data berhasil diubah'); window.location.href='dashboard.php';</script>";
+    $data_update = [
+        'id' => $id_artikel,
+        'penulis' => trim($_POST['penulis']),
+        'judul' => trim($_POST['judul']),
+        'kutipan' => trim($_POST['kutipan']),
+        'isi' => trim($_POST['isi']),
+        'kategori' => trim($_POST['kategori']),
+        'gambarLama' => $artikel['gambar'] // Kirim nama gambar lama ke fungsi ubah
+    ];
+
+    if (ubah_artikel($data_update)) { // Menggunakan fungsi ubah_artikel dari functions.php
+        set_flash_message('artikel_success', 'Artikel berhasil diperbarui!', 'success');
+        header("Location: dasboard.php");
+        exit();
     } else {
-        echo "<script>alert('Terjadi kesalahan saat mengubah data');</script>";
+        // Pesan error sudah di-set oleh ubah_artikel() atau upload_gambar()
+        $_SESSION['old_input_ubah'] = $_POST;
+        header("Location: ubah.php?id=" . $id_artikel);
+        exit();
     }
 }
+
+$csrf_token_ubah = $_SESSION['csrf_token'];
+$old_input = $_SESSION['old_input_ubah'] ?? $artikel; // Jika ada old_input dari error, gunakan itu, jika tidak, gunakan data dari DB
+unset($_SESSION['old_input_ubah']);
 ?>
-
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ubah Data</title>
+    <title>Ubah Artikel - <?= htmlspecialchars($artikel['judul']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Open Sans', sans-serif; background-color: #f8f9fa; }
+        .container-form { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); margin-top: 20px; max-width: 800px;}
+        .current-image { max-width: 200px; height: auto; margin-top: 10px; border-radius: 5px; border: 1px solid #ddd; }
+    </style>
 </head>
-
 <body>
-    <div class="container">
-        <h2 class="mt-5">Ubah Data</h2>
-        <form method="POST" action="" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-            <input type="hidden" name="id" value="<?= $h['id']; ?>">
-            <input type="hidden" name="gambarLama" value="<?= $h['gambar']; ?>">
+    <?php include_once '../nav.php'; ?>
+    <div class="container container-form">
+        <h2 class="mt-3 mb-4">Ubah Artikel: "<?= htmlspecialchars($artikel['judul']); ?>"</h2>
+
+        <?= get_flash_message('artikel_error'); ?>
+        <?= get_flash_message('upload_error'); ?>
+
+        <form method="POST" action="ubah.php?id=<?= $id_artikel; ?>" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token_ubah); ?>">
             <div class="mb-3">
-                <label for="penulis" class="form-label">Penulis</label>
-                <input type="text" class="form-control" id="penulis" name="penulis" required
-                    value="<?= htmlspecialchars($h['penulis']); ?>">
+                <label for="penulis" class="form-label">Penulis <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="penulis" name="penulis" value="<?= htmlspecialchars($old_input['penulis'] ?? ''); ?>" required>
             </div>
             <div class="mb-3">
-                <label for="judul" class="form-label">Judul</label>
-                <input type="text" class="form-control" id="judul" name="judul" required
-                    value="<?= htmlspecialchars($h['judul']); ?>">
+                <label for="judul" class="form-label">Judul <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="judul" name="judul" value="<?= htmlspecialchars($old_input['judul'] ?? ''); ?>" required>
             </div>
             <div class="mb-3">
-                <label for="kutipan" class="form-label">Kutipan</label>
-                <input type="text" class="form-control" id="kutipan" name="kutipan" required
-                    value="<?= htmlspecialchars($h['kutipan']); ?>">
+                <label for="kutipan" class="form-label">Kutipan (Opsional)</label>
+                <textarea class="form-control" id="kutipan" name="kutipan" rows="2"><?= htmlspecialchars($old_input['kutipan'] ?? ''); ?></textarea>
             </div>
             <div class="mb-3">
-                <label for="isi" class="form-label">Isi</label>
-                <textarea class="form-control" id="isi" name="isi" rows="3"
-                    required><?= htmlspecialchars($h['isi']); ?></textarea>
+                <label for="isi" class="form-label">Isi Artikel <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="isi" name="isi" rows="10" required><?= htmlspecialchars($old_input['isi'] ?? ''); ?></textarea>
             </div>
             <div class="mb-3">
-                <label for="kategori" class="form-label">Kategori</label>
-                <input type="text" class="form-control" id="kategori" name="kategori" required
-                    value="<?= htmlspecialchars($h['kategori']); ?>">
+                <label for="kategori" class="form-label">Kategori (Opsional)</label>
+                <input type="text" class="form-control" id="kategori" name="kategori" value="<?= htmlspecialchars($old_input['kategori'] ?? ''); ?>">
             </div>
             <div class="mb-3">
-                <label for="gambar" class="form-label">Gambar</label>
+                <label for="gambar" class="form-label">Ganti Gambar (Opsional, Max 5MB)</label>
                 <input type="file" class="form-control" id="gambar" name="gambar">
+                <?php if (!empty($artikel['gambar'])): ?>
+                    <p class="mt-2">Gambar saat ini: <br>
+                    <img src="../img/<?= htmlspecialchars($artikel['gambar']); ?>" alt="Gambar saat ini" class="current-image"></p>
+                <?php endif; ?>
             </div>
-            <button type="submit" class="btn btn-primary" name="ubah">Ubah Data</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Perubahan</button>
+            <a href="dasboard.php" class="btn btn-secondary">Batal</a>
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
