@@ -4,6 +4,8 @@ require_once 'functions.php';
 
 // Pastikan pengguna sudah login
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    log_activity("Akses tidak sah ke view.php (Blog Saya): belum login"); // LOG ACTIVITY
+
     set_flash_message('login_info', 'Anda harus login untuk melihat halaman ini.', 'info');
     header("Location: login.php");
     exit();
@@ -12,6 +14,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 // Halaman ini khusus untuk user melihat artikelnya.
 
 $username_session = $_SESSION['username'];
+log_activity("User mengakses halaman 'Blog Saya'", ['username' => $username_session]); // LOG ACTIVITY
+
 // Ambil artikel yang ditulis oleh pengguna yang sedang login
 $sql = "SELECT * FROM halaman WHERE penulis = :username ORDER BY tgl_isi DESC";
 $stmt_halaman = query($sql, [':username' => $username_session]);

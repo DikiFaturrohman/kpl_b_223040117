@@ -4,12 +4,16 @@ require_once 'functions.php';
 
 // Pastikan pengguna sudah login
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    log_activity("Akses tidak sah ke edit.php (user): belum login"); // LOG ACTIVITY
+
     set_flash_message('login_info', 'Anda harus login untuk mengedit artikel.', 'info');
     header("Location: login.php");
     exit();
 }
 // Admin tidak diarahkan dari sini, karena mereka punya dashboard sendiri.
 if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    log_activity("Admin mencoba akses edit.php (user), diarahkan ke panel admin", ['admin_username' => $_SESSION['username']]); // LOG ACTIVITY
+  
     set_flash_message('admin_info_edit', 'Admin dapat mengedit artikel melalui Admin Panel.', 'info');
     header("Location: admin/dasboard.php");
     exit();
@@ -17,10 +21,15 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
 
 $id_artikel = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id_artikel) {
+    log_error("User mencoba akses edit.php dengan ID artikel tidak valid", ['id_attempted' => $_GET['id'] ?? 'N/A', 'username' => $_SESSION['username']]); // LOG ERROR
+ 
     set_flash_message('artikel_user_error', 'ID Artikel tidak valid untuk diedit.', 'danger');
     header("Location: view.php"); // Kembali ke daftar artikel pengguna
     exit();
 }
+
+log_activity("User mengakses halaman edit artikel", ['username' => $_SESSION['username'], 'id_artikel' => $id_artikel]); // LOG ACTIVITY
+
 
 // Ambil data artikel yang akan diedit, pastikan milik user yang login
 $username_session = $_SESSION['username'];
@@ -28,6 +37,8 @@ $stmt_artikel = query("SELECT * FROM halaman WHERE id = :id AND penulis = :penul
 $artikel = $stmt_artikel ? $stmt_artikel->fetch() : null;
 
 if (!$artikel) {
+    log_error("User mencoba mengedit artikel yang tidak ditemukan atau bukan miliknya", ['id_artikel' => $id_artikel, 'username' => $username_session]); // LOG ERROR
+
     set_flash_message('artikel_user_error', 'Artikel tidak ditemukan atau Anda tidak berhak mengeditnya.', 'danger');
     header("Location: view.php");
     exit();
@@ -37,6 +48,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
         set_flash_message('artikel_user_error', 'Sesi tidak valid atau telah kedaluwarsa. Silakan coba lagi.', 'danger');
         $_SESSION['old_input_edit_user'] = $_POST;
+        log_activity("User gagal mengedit artikel: CSRF token tidak valid", ['id_artikel' => $id_artikel, 'username' => $_SESSION['username']]); // LOG ACTIVITY
+
         header("Location: edit.php?id=" . $id_artikel);
         exit();
     }
@@ -63,6 +76,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Pesan error sudah di-set oleh ubah_artikel() atau upload_gambar()
         $_SESSION['old_input_edit_user'] = $_POST;
+        log_activity("User gagal mengedit artikel: fungsi ubah_artikel mengembalikan false", ['id_artikel' => $id_artikel, 'username' => $username_session, 'data_input' => $data_update]); // LOG ACTIVITY
+ 
         header("Location: edit.php?id=" . $id_artikel);
         exit();
     }

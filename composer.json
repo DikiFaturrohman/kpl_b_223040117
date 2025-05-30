@@ -1,0 +1,12 @@
+{
+    "name": "diki/kpl2024_b",
+    "authors": [
+        {
+            "name": "Diki Faturrohman",
+            "email": "118197085+DikiFaturrohman@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "monolog/monolog": "^3.9"
+    }
+}

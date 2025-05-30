@@ -11,6 +11,8 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
         set_flash_message('register_error', 'Sesi tidak valid atau telah kedaluwarsa. Silakan muat ulang halaman dan coba lagi.', 'danger');
+        log_activity("Registrasi gagal: CSRF token tidak valid", ['username_attempt' => $_POST['username'] ?? 'N/A']); // LOG ACTIVITY
+
         header("Location: register.php"); // Redirect untuk mencegah resubmit dengan token lama
         exit();
     }

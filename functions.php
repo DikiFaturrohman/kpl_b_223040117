@@ -1,239 +1,137 @@
 <?php
-
-
-// require 'db_connect.php'; // Koneksi PDO
-
-// function generateCSRFToken()
-// {
-//     return bin2hex(random_bytes(32));
-// }
-
-// function setCSRFToken()
-// {
-//     if (!isset($_SESSION['csrf_token'])) {
-//         $_SESSION['csrf_token'] = generateCSRFToken();
-//     }
-// }
-
-// function checkCSRFToken($token)
-// {
-//     if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
-//         return false; // Token tidak valid
-//     }
-//     return true; // Token valid
-// }
-
-// function query($query, $params = [])
-// {
-//     global $conn;
-//     try {
-//         $stmt = $conn->prepare($query);
-//         $stmt->execute($params);
-//         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-//     } catch (PDOException $e) {
-//         error_log("PDO Exception in query function: " . $e->getMessage());
-//         return false; // or handle the error as appropriate
-//     }
-// }
-
-// function registrasi($data)
-// {
-//     global $conn;
-
-//     $username = strtolower(stripslashes($data["username"]));
-//     $email = filter_var($data["email"], FILTER_VALIDATE_EMAIL);
-
-//     if ($email === false) {
-//         echo "<script>alert('Format email tidak valid!');</script>";
-//         return false;
-//     }
-
-//     $password = $data["password"];
-//     $password2 = $data["password2"];
-
-//     if ($password !== $password2) {
-//         echo "<script>alert('Konfirmasi password tidak sesuai!');</script>";
-//         return false;
-//     }
-
-//     $password = password_hash($password, PASSWORD_DEFAULT);
-//     try {
-//         $stmt = $conn->prepare("SELECT username FROM users WHERE username = :username");
-//         $stmt->execute([':username' => $username]);
-
-//         if ($stmt->fetch()) {
-//             echo "<script>alert('Username sudah terdaftar!');</script>";
-//             return false;
-//         }
-
-//         $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
-//         $stmt->execute([':username' => $username, ':email' => $email, ':password' => $password]);
-
-//         return true; // Berhasil registrasi
-//     } catch (PDOException $e) {
-//         error_log("PDO Exception in registrasi function: " . $e->getMessage());
-//         echo "<script>alert('Error saat registrasi: " . $e->getMessage() . "');</script>";
-//         return false;
-//     }
-// }
-
-// function login($email, $password)
-// {
-//     global $conn;
-
-//     try {
-//         $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
-//         $stmt->execute([':email' => $email]);
-//         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-//         if ($row && password_verify($password, $row['password'])) {
-//             return $row;
-//         } else {
-//             return false;
-//         }
-//     } catch (PDOException $e) {
-//         error_log("PDO Exception in login function: " . $e->getMessage());
-//         return false;
-//     }
-// }
-
-// function tambah($data)
-// {
-//     global $conn;
-
-//     $penulis = htmlspecialchars($data['penulis']);
-//     $judul = htmlspecialchars($data['judul']);
-//     $kutipan = htmlspecialchars($data['kutipan']);
-//     $isi = htmlspecialchars($data['isi']);
-//     $kategori = htmlspecialchars($data['kategori']);
-
-//     $gambar = upload();
-//     if (!$gambar) {
-//         return false;
-//     }
-
-//     try {
-//         $stmt = $conn->prepare("INSERT INTO halaman (penulis, judul, kutipan, isi, gambar, tgl_isi, kategori) 
-//                                VALUES (:penulis, :judul, :kutipan, :isi, :gambar, NOW(), :kategori)");
-
-//         $stmt->execute([
-//             ':penulis' => $penulis,
-//             ':judul' => $judul,
-//             ':kutipan' => $kutipan,
-//             ':isi' => $isi,
-//             ':gambar' => $gambar,
-//             ':kategori' => $kategori
-//         ]);
-
-//         return true;
-//     } catch (PDOException $e) {
-//         error_log("PDO Exception in tambah function: " . $e->getMessage());
-//         echo "<script>alert('Error saat menambahkan data: " . $e->getMessage() . "');</script>";
-//         return false;
-//     }
-// }
-
-// function upload()
-// {
-//     if (!isset($_FILES['gambar']) || $_FILES['gambar']['error'] === UPLOAD_ERR_NO_FILE) {
-//         echo "<script>alert('Pilih gambar terlebih dahulu');</script>";
-//         return false;
-//     }
-
-//     $namafile = $_FILES['gambar']['name'];
-//     $ukuranfile = $_FILES['gambar']['size'];
-//     $error = $_FILES['gambar']['error'];
-//     $tmpName = $_FILES['gambar']['tmp_name'];
-
-//     $ekstensigambarValid = ['jpg', 'jpeg', 'png'];
-//     $ekstensigambar = strtolower(pathinfo($namafile, PATHINFO_EXTENSION));
-
-//     if (!in_array($ekstensigambar, $ekstensigambarValid)) {
-//         echo "<script>alert('Yang Anda upload bukan gambar');</script>";
-//         return false;
-//     }
-
-//     if ($ukuranfile > 5000000) {
-//         echo "<script>alert('Ukuran gambar terlalu besar');</script>";
-//         return false;
-//     }
-
-//     $namafilebaru = uniqid() . '.' . $ekstensigambar;
-//     $targetPath = '../img/' . $namafilebaru;
-
-//     if (move_uploaded_file($tmpName, $targetPath)) {
-//         return $namafilebaru;
-//     } else {
-//         echo "<script>alert('Gagal mengupload gambar');</script>";
-//         return false;
-//     }
-// }
-
-// function hapus($id)
-// {
-//     global $conn;
-
-//     try {
-//         $stmt = $conn->prepare("DELETE FROM halaman WHERE id = :id");
-//         $stmt->execute([':id' => $id]);
-//         return true;
-//     } catch (PDOException $e) {
-//         error_log("PDO Exception in hapus function: " . $e->getMessage());
-//         echo "<script>alert('Error saat menghapus data: " . $e->getMessage() . "');</script>";
-//         return false;
-//     }
-// }
-
-// function ubah($data)
-// {
-//     global $conn;
-
-//     $id = $data['id'];
-//     $gambarLama = $data['gambarLama'];
-
-//     $penulis = htmlspecialchars($data['penulis']);
-//     $judul = htmlspecialchars($data['judul']);
-//     $kutipan = htmlspecialchars($data['kutipan']);
-//     $isi = htmlspecialchars($data['isi']);
-//     $kategori = htmlspecialchars($data['kategori']);
-
-//     $gambar = $_FILES['gambar']['name'] ? upload() : $gambarLama; //Only upload new image if there is one
-
-//     try {
-//         $stmt = $conn->prepare("UPDATE halaman SET penulis=:penulis, judul=:judul, kutipan=:kutipan, isi=:isi, kategori=:kategori, gambar=:gambar WHERE id=:id");
-//         $stmt->execute([
-//             ':penulis' => $penulis,
-//             ':judul' => $judul,
-//             ':kutipan' => $kutipan,
-//             ':isi' => $isi,
-//             ':kategori' => $kategori,
-//             ':gambar' => $gambar,
-//             ':id' => $id
-//         ]);
-
-//         return true;
-//     } catch (PDOException $e) {
-//         error_log("PDO Exception in ubah function: " . $e->getMessage());
-//         echo "<script>alert('Error saat mengubah data: " . $e->getMessage() . "');</script>";
-//         return false;
-//     }
-// }
-
-// setCSRFToken(); // Inisialisasi token CSRF
-
-
-
 // functions.php
-
+require_once __DIR__ . '/vendor/autoload.php';
 // Pastikan session_start() dipanggil di file yang meng-include ini, SEBELUM include.
 // Atau, jika ingin functions.php menangani ini (kurang umum):
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Processor\WebProcessor;
+use Monolog\Processor\MemoryUsageProcessor;
+use Monolog\Processor\MemoryPeakUsageProcessor;
+
 require_once 'db_connect.php';
 
 define('APP_ROOT_PATH', __DIR__); // Definisikan root path aplikasi
+
+// --- Konfigurasi Logging ---
+define('LOGS_DIR', APP_ROOT_PATH . '/logs'); // Logs directory
+if (!is_dir(LOGS_DIR)) {
+    mkdir(LOGS_DIR, 0775, true); // Buat direktori jika belum ada
+}
+
+$loggerInstances = []; // Cache untuk instance logger
+
+function get_logger($channelName = 'app', $logFile = 'app.log', $logLevel = Logger::DEBUG) {
+    global $loggerInstances;
+
+    if (isset($loggerInstances[$channelName])) {
+        return $loggerInstances[$channelName];
+    }
+
+    try {
+        $logger = new Logger($channelName);
+
+        // Handler untuk menulis log ke file
+        $streamHandler = new StreamHandler(LOGS_DIR . '/' . $logFile, $logLevel);
+
+        // Formatter untuk kustomisasi format log
+        $dateFormat = "Y-m-d H:i:s.u"; // Format tanggal dengan mikrodetik
+        // Format output: [timestamp] channel.LEVEL: message {context} {extra}
+        $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
+        $formatter = new LineFormatter($outputFormat, $dateFormat, true, true); // true ketiga untuk allowInlineLineBreaks, true keempat untuk ignoreEmptyContextAndExtra
+        $streamHandler->setFormatter($formatter);
+
+        $logger->pushHandler($streamHandler);
+
+        // Processor untuk menambahkan data ekstra ke log (opsional tapi berguna)
+        if (isset($_SERVER['REQUEST_METHOD'])) { // Hanya jika dalam konteks web request
+            $logger->pushProcessor(new WebProcessor()); // Menambahkan IP, URL, HTTP method
+        }
+        $logger->pushProcessor(new MemoryUsageProcessor());
+        $logger->pushProcessor(new MemoryPeakUsageProcessor());
+        
+        $loggerInstances[$channelName] = $logger;
+        return $logger;
+
+    } catch (\Exception $e) {
+        // Fallback jika Monolog gagal diinisialisasi
+        error_log("Gagal menginisialisasi logger '$channelName': " . $e->getMessage());
+        // Mengembalikan logger dummy sederhana jika terjadi error
+        return new class {
+            public function info($message, array $context = []) { error_log("INFO: $message " . json_encode($context)); }
+            public function error($message, array $context = []) { error_log("ERROR: $message " . json_encode($context)); }
+            public function warning($message, array $context = []) { error_log("WARNING: $message " . json_encode($context)); }
+            public function debug($message, array $context = []) { error_log("DEBUG: $message " . json_encode($context)); }
+            // Tambahkan method lain jika perlu
+        };
+    }
+}
+
+// --- Fungsi Helper Logging ---
+function log_activity($message, array $context = []) {
+    $logger = get_logger('activity', 'activity.log', Logger::INFO);
+    $userId = $_SESSION['user_id'] ?? 'guest_id';
+    $username = $_SESSION['username'] ?? 'Guest';
+    $context['user_id'] = $userId;
+    $context['username'] = $username;
+    if (isset($_SERVER['REMOTE_ADDR'])) {
+        $context['ip_address'] = $_SERVER['REMOTE_ADDR'];
+    }
+    if (isset($_SERVER['REQUEST_URI'])) {
+        $context['request_uri'] = $_SERVER['REQUEST_URI'];
+    }
+    $logger->info($message, $context);
+}
+
+function log_error($message, array $context = [], Throwable $exception = null) {
+    $logger = get_logger('error', 'error.log', Logger::ERROR);
+    if (isset($_SESSION['user_id'])) $context['user_id'] = $_SESSION['user_id'];
+    if (isset($_SESSION['username'])) $context['username'] = $_SESSION['username'];
+    if (isset($_SERVER['REMOTE_ADDR'])) $context['ip_address'] = $_SERVER['REMOTE_ADDR'];
+    if (isset($_SERVER['REQUEST_URI'])) $context['request_uri'] = $_SERVER['REQUEST_URI'];
+
+    if ($exception) {
+        $context['exception'] = [
+            'message' => $exception->getMessage(),
+            'file'    => $exception->getFile(),
+            'line'    => $exception->getLine(),
+            'trace'   => $exception->getTraceAsString() // Bisa sangat panjang, pertimbangkan untuk memotongnya jika perlu
+        ];
+    }
+    $logger->error($message, $context);
+}
+
+// --- Global Error and Exception Handlers ---
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        // Error code ini tidak termasuk dalam error_reporting
+        return false;
+    }
+    log_error("PHP Error", ['severity' => $severity, 'message' => $message, 'file' => $file, 'line' => $line]);
+    return false; // Biarkan handler error internal PHP juga berjalan jika bukan E_USER_ERROR dll.
+});
+
+set_exception_handler(function (Throwable $exception) {
+    log_error("Uncaught Exception", [], $exception);
+
+    // Di lingkungan produksi, tampilkan halaman error generik
+    // Untuk pengembangan, Anda mungkin ingin menampilkan detail error
+    if (ini_get('display_errors') === '1' || ini_get('display_errors') === 'On') {
+        echo "<h1>Uncaught Exception</h1>";
+        echo "<p>Message: " . htmlspecialchars($exception->getMessage()) . "</p>";
+        echo "<p>File: " . htmlspecialchars($exception->getFile()) . " on line " . htmlspecialchars($exception->getLine()) . "</p>";
+        echo "<pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
+    } else {
+        http_response_code(500);
+        echo "<h1>Terjadi Kesalahan Internal</h1><p>Kami mohon maaf, terjadi kesalahan pada server. Tim kami telah diberitahu.</p>";
+    }
+    exit;
+});
 
 // --- Fungsi Pesan Flash (untuk feedback setelah redirect) ---
 function set_flash_message($name, $message, $type = 'success') {

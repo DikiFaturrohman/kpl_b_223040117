@@ -17,6 +17,7 @@ $error_message_display = ''; // Untuk menampilkan pesan error spesifik dari pros
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'], false)) { // Jangan regenerate token di sini jika login gagal, biarkan user coba lagi dengan token yang sama
         $error_message_display = "Sesi tidak valid atau telah kedaluwarsa. Silakan muat ulang halaman dan coba lagi.";
+        log_error("CSRF token tidak valid pada login.php", ['email_attempt' => $_POST['email'] ?? 'N/A']);
     } else {
         $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
         $password = $_POST['password'];

@@ -9,6 +9,19 @@ if (!isset($_SESSION['loggedin']) || !isset($_SESSION['role']) || $_SESSION['rol
     exit();
 }
 
+log_activity("Admin dashboard diakses", ['admin_username' => $_SESSION['username']]);
+
+// Jika ada keyword pencarian
+if ($keyword_raw !== null && $keyword_raw !== '') {
+    log_activity("Admin melakukan pencarian di dashboard", ['keyword' => $keyword_raw]);
+}
+
+// Jika query gagal (meskipun sudah ditangani di functions.php, ini contoh logging spesifik)
+if ($stmt_halaman === false) {
+    // log_error("Gagal mengambil data halaman dari database untuk admin dashboard"); // Redundan jika query() sudah log
+    set_flash_message('dashboard_error', 'Gagal mengambil data halaman dari database.', 'danger');
+}
+
 $keyword_raw = isset($_GET['keyword']) ? trim($_GET['keyword']) : null;
 $keyword_display = $keyword_raw ? htmlspecialchars($keyword_raw, ENT_QUOTES, 'UTF-8') : '';
 $params = [];
