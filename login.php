@@ -18,8 +18,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'], false)) { // Jangan regenerate token di sini jika login gagal, biarkan user coba lagi dengan token yang sama
         $error_message_display = "Sesi tidak valid atau telah kedaluwarsa. Silakan muat ulang halaman dan coba lagi.";
     } else {
-        $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
-        $password = $_POST['password'];
+        // Verifikasi reCAPTCHA
+        $recaptcha_secret = '6Lc-k08rAAAAAJyvs33KTfqUjUHW6vghSmmOAew6';
+        $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+        if (empty($recaptcha_response)) {
+            $error_message_display = 'Captcha belum diisi.';
+        } else {
+            $verify_response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptcha_secret&response=$recaptcha_response");
+            $response_data = json_decode($verify_response);
+
+        if (!$response_data->success) {
+            $error_message_display = 'Verifikasi captcha gagal. Silakan coba lagi.';
+        } else {
+            $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
+            $password = $_POST['password'];
 
         if (empty($email) || empty($password)) {
             $error_message_display = 'Email dan password wajib diisi.';
@@ -53,6 +65,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // user bisa mencoba lagi dengan form yang sama.
             }
         }
+        }
+        }
     }
 }
 // Pastikan token ada untuk form (dipanggil lagi jika belum ada, atau jika login gagal sebelumnya)
@@ -65,6 +79,7 @@ $csrf_token_login = setCSRFToken();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CAMPUS BLOG - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body { background-color: #f8f9fa; }
         .gradient-custom { /* fallback for old browsers */ background: #6a11cb; /* Chrome 10-25, Safari 5.1-6 */ background: -webkit-linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1)); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */ background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1)) }
@@ -96,6 +111,8 @@ $csrf_token_login = setCSRFToken();
                                         <label class="form-label" for="password">Password</label>
                                         <input type="password" id="password" name="password" class="form-control form-control-lg" required />
                                     </div>
+                                    <!-- Menambahkan Captcha -->
+                                    <div class="g-recaptcha mb-4" data-sitekey="6Lc-k08rAAAAAIt_Tulr4LBusoFwhMB5HuZbTfl_"></div>
                                     <button class="btn btn-outline-light btn-lg px-5" type="submit">Login</button>
                                 </form>
                             </div>
