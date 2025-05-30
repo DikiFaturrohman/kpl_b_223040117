@@ -5,21 +5,30 @@ require_once 'functions.php';
 // Hanya user yang login (bukan admin) yang boleh akses halaman ini untuk menulis
 // Admin menulis melalui admin panel. Jika admin juga boleh, sesuaikan logikanya.
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    log_activity("Akses tidak sah ke write.php (Tulis Artikel): belum login"); // LOG ACTIVITY
+
     set_flash_message('login_info', 'Anda harus login untuk menulis artikel.', 'info');
     header("Location: login.php");
     exit();
 }
 if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    log_activity("Admin mencoba akses write.php, diarahkan ke panel admin", ['admin_username' => $_SESSION['username']]); // LOG ACTIVITY
+
     set_flash_message('admin_info', 'Admin dapat menambah artikel melalui Admin Panel.', 'info');
     header("Location: admin/dasboard.php"); // Arahkan admin ke dashboard mereka
     exit();
 }
+
+log_activity("User mengakses halaman 'Tulis Artikel Baru'", ['username' => $_SESSION['username']]); // LOG ACTIVITY
+
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
         set_flash_message('artikel_user_error', 'Sesi tidak valid atau telah kedaluwarsa. Silakan coba lagi.', 'danger');
         $_SESSION['old_input_write'] = $_POST;
+        log_activity("User gagal menulis artikel: CSRF token tidak valid", ['username' => $_SESSION['username']]); // LOG ACTIVITY
+
         header("Location: write.php");
         exit();
     }
@@ -41,6 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Pesan error sudah di-set oleh tambah_artikel() atau upload_gambar()
         $_SESSION['old_input_write'] = $_POST; // Simpan input untuk repopulate
+        log_activity("User gagal menulis artikel: fungsi tambah_artikel mengembalikan false", ['username' => $_SESSION['username'], 'data_input' => $data_artikel]); // LOG ACTIVITY
+ 
         header("Location: write.php");
         exit();
     }

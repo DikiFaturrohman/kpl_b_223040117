@@ -16,6 +16,7 @@ if ($keyword_raw !== null && $keyword_raw !== '') {
     //     $sql .= " AND (judul LIKE :keyword OR penulis LIKE :keyword OR kategori LIKE :keyword OR isi LIKE :keyword)";
     // }
     // Untuk saat ini, asumsikan pencarian adalah filter utama jika ada
+    log_activity("Pencarian artikel di halaman utama", ['keyword' => $keyword_raw]); // LOG ACTIVITY
     $sql .= " WHERE (judul LIKE :keyword OR penulis LIKE :keyword OR kategori LIKE :keyword OR isi LIKE :keyword)";
     $params[':keyword'] = "%" . $keyword_raw . "%";
 }

@@ -28,6 +28,7 @@ $username_komentar_form = isset($_SESSION['username']) ? htmlspecialchars($_SESS
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_komentar'])) {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
+        log_error("CSRF token tidak valid saat menambah komentar", ['artikel_id' => $id_artikel]);
         set_flash_message('comment_error', 'Sesi tidak valid atau telah kedaluwarsa. Komentar tidak ditambahkan.', 'danger');
         header("Location: detail.php?id=$id_artikel#comment-form");
         exit();
@@ -51,8 +52,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_komentar'])) {
 
         if ($stmt_insert && $stmt_insert->rowCount() > 0) {
             set_flash_message('comment_success', 'Komentar berhasil ditambahkan.', 'success');
+            log_activity("Komentar berhasil ditambahkan", ['artikel_id' => $id_artikel, 'komentator' => $nama_pengirim_komentar]);
         } else {
             set_flash_message('comment_error', 'Gagal menambahkan komentar karena masalah teknis.', 'danger');
+            log_error("Gagal menambahkan komentar ke DB", ['artikel_id' => $id_artikel, 'komentator' => $nama_pengirim_komentar]);
         }
     }
     header("Location: detail.php?id=$id_artikel#comment-list"); // Redirect ke daftar komentar

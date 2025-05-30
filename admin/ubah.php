@@ -3,6 +3,7 @@ session_start();
 require_once '../functions.php';
 
 if (!isset($_SESSION['loggedin']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    log_activity("Akses tidak sah ke admin/ubah.php", ['reason' => 'Belum login atau bukan admin']); // LOG ACTIVITY
     set_flash_message('login_error', 'Anda harus login sebagai admin.', 'danger');
     header("Location: ../login.php");
     exit();
@@ -10,16 +11,24 @@ if (!isset($_SESSION['loggedin']) || !isset($_SESSION['role']) || $_SESSION['rol
 
 $id_artikel = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id_artikel) {
+    log_error("Admin mencoba akses ubah.php dengan ID artikel tidak valid", ['id_attempted' => $_GET['id'] ?? 'N/A', 'admin_username' => $_SESSION['username']]); // LOG ERROR
+
     set_flash_message('artikel_error', 'ID Artikel tidak valid.', 'danger');
     header("Location: dasboard.php");
     exit();
 }
+
+
+log_activity("Admin mengakses halaman ubah artikel", ['admin_username' => $_SESSION['username'], 'id_artikel' => $id_artikel]); // LOG ACTIVITY
+
 
 // Ambil data artikel yang akan diubah
 $stmt_artikel = query("SELECT * FROM halaman WHERE id = :id", [':id' => $id_artikel]);
 $artikel = $stmt_artikel ? $stmt_artikel->fetch() : null;
 
 if (!$artikel) {
+    log_error("Admin mencoba mengubah artikel yang tidak ditemukan", ['id_artikel' => $id_artikel, 'admin_username' => $_SESSION['username']]); // LOG ERROR
+
     set_flash_message('artikel_error', 'Artikel tidak ditemukan.', 'danger');
     header("Location: dasboard.php");
     exit();
@@ -29,6 +38,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
         set_flash_message('artikel_error', 'Sesi tidak valid atau telah kedaluwarsa. Silakan coba lagi.', 'danger');
         $_SESSION['old_input_ubah'] = $_POST;
+        log_activity("Admin gagal mengubah artikel: CSRF token tidak valid", ['id_artikel' => $id_artikel, 'admin_username' => $_SESSION['username']]); // LOG ACTIVITY
+        
         header("Location: ubah.php?id=" . $id_artikel);
         exit();
     }
@@ -50,6 +61,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Pesan error sudah di-set oleh ubah_artikel() atau upload_gambar()
         $_SESSION['old_input_ubah'] = $_POST;
+        log_activity("Admin gagal mengubah artikel: fungsi ubah_artikel mengembalikan false", ['id_artikel' => $id_artikel, 'admin_username' => $_SESSION['username'], 'data_input' => $data_update]); // LOG ACTIVITY
+
         header("Location: ubah.php?id=" . $id_artikel);
         exit();
     }

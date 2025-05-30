@@ -42,11 +42,20 @@ $options = [
 
 try {
     $conn = new PDO($dsn, $user, $pass, $options);
+    // Tidak perlu log sukses koneksi di sini, terlalu verbose
 } catch (\PDOException $e) {
-    // Di lingkungan produksi, jangan tampilkan error detail ke user.
-    // Log error ini ke file atau sistem logging.
-    error_log("Koneksi Database Gagal: " . $e->getMessage());
+    // Fungsi log_error mungkin belum tersedia jika db_connect.php di-include sebelum functions.php
+    // yang mendefinisikannya. Maka, gunakan error_log() dasar di sini sebagai fallback.
+    $logMessage = "Koneksi Database Gagal: " . $e->getMessage();
+    error_log($logMessage); // Log ke error log PHP default
+
+    // Jika functions.php sudah di-load dan log_error() tersedia:
+    if (function_exists('log_error')) {
+        log_error("Koneksi Database Gagal", [], $e);
+    }
+    
     // Tampilkan pesan error generik ke user atau redirect ke halaman error.
-    die("Tidak dapat terhubung ke database. Silakan coba lagi nanti.");
+    // Jangan tampilkan $e->getMessage() di produksi.
+    die("Tidak dapat terhubung ke database. Silakan coba lagi nanti atau hubungi administrator.");
 }
 ?>

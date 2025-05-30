@@ -9,6 +9,8 @@ $contact_form_success = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
     if (!isset($_POST['csrf_token']) || !checkCSRFToken($_POST['csrf_token'])) {
         $contact_form_error = 'Sesi tidak valid atau telah kedaluwarsa. Silakan coba lagi.';
+        log_activity("Pengiriman form kontak gagal: CSRF token tidak valid", ['email_attempt' => $_POST['email'] ?? 'N/A']); // LOG ACTIVITY
+
     } else {
         $nama = trim(filter_input(INPUT_POST, 'nama', FILTER_SANITIZE_STRING));
         $email = trim(filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL));
@@ -17,8 +19,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
 
         if (empty($nama) || empty($email) || empty($subjek) || empty($pesan)) {
             $contact_form_error = 'Semua field wajib diisi.';
+            log_activity("Pengiriman form kontak gagal: field kosong", ['nama' => $nama, 'email' => $email, 'subjek' => $subjek]); // LOG ACTIVITY
+   
         } elseif (!$email) {
             $contact_form_error = 'Format email tidak valid.';
+            log_activity("Pengiriman form kontak gagal: format email tidak valid", ['email_input' => $_POST['email']]); // LOG ACTIVITY
+  
         } else {
             // Proses pengiriman email atau penyimpanan pesan ke database
             // Contoh:
@@ -38,6 +44,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_contact'])) {
 
             // Untuk contoh ini, kita hanya tampilkan pesan sukses tanpa mengirim email sebenarnya
             $contact_form_success = "Pesan Anda telah berhasil diterima (simulasi). Kami akan segera merespons.";
+            log_activity("Pesan kontak berhasil diterima (simulasi)", ['nama' => $nama, 'email' => $email, 'subjek' => $subjek]); // LOG ACTIVITY
+ 
             $contact_form_submitted = true;
             // Kosongkan $_POST untuk mengosongkan form
             $_POST = [];
